@@ -2,16 +2,15 @@ from distutils.core import setup
 
 setup(
     name='MAGPlus',
-    version='0.0.9',
+    version='0.1.1',
     author='Josh Gachnang',
     author_email='Josh@ServerCobra.com',
     packages=['magplus',],
-    #scripts=['bin/stowe-towels.py','bin/wash-towels.py'],
     url='http://pypi.python.org/pypi/MAGPlus/',
-    license='LICENSE.txt',
+    license='GPLv2',
     description='Retrieving latest Minecraft versions.',
     long_description=open('README.rst').read(),
-    #install_requires=[
-
-    #],
+    install_requires=[
+    'beautifulsoup4 >= 4.1.1',
+    ]
 )

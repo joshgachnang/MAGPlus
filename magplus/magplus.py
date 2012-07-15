@@ -9,7 +9,10 @@ import urllib2
 import re
 from datetime import datetime
 from xml.dom.minidom import parseString
+from operator import itemgetter
+import urlparse
 
+import bs4
 
 class MinecraftAssetsGetter:
     # last backslash in fileUrl is important
@@ -20,8 +23,8 @@ class MinecraftAssetsGetter:
         file.close()
         self.dom = parseString(data)
 
-    def getVanillaVersionList(self, stable=False):
-        """Returns a list of versions, sorted by date, from earliest to
+    def getVanillaVersionList(self, stable=True):
+        """ Returns a list of versions, sorted by date, from earliest to
         latest. versions[-1] would be the latest version.
         stable: Determines whether only stable releases are returned or not.
         """
@@ -63,12 +66,74 @@ class MinecraftAssetsGetter:
         # Filter duplicates
         return list(set(sorted_list))
 
+    def getBukkitVersionList(self, beta=False):
+        """ Returns a list of versions, sorted by date, from earliest to
+        latest. versions[-1] would be the latest version.
+        stable: Determines whether only stable (recommended) releases are returned or not.
+
+        Each version is a dict with the following keys:
+        build_number: Build number with # prepended, used for sorting.
+        build_name: Official name of the release
+        download_link: Link (minus base URL) for the jar. None if no download link provided,
+                       or if build is a broken build.
+        """
+        # TODO: Make this less fragile!!!
+        bukkit_base_url = 'http://dl.bukkit.org/'
+        build_list = []
+        if beta:
+            html = urllib2.urlopen('http://dl.bukkit.org/downloads/craftbukkit/list/beta/').read()
+            soup = bs4.BeautifulSoup(html)
+            build_rows = soup.find_all('tr', {"class": "chan-beta"})
+        else:
+            html = urllib2.urlopen('http://dl.bukkit.org/downloads/craftbukkit/list/rb/').read()
+            soup = bs4.BeautifulSoup(html)
+            build_rows = soup.find_all('tr', {"class": "chan-rb"})
+
+        # Process each row in the table
+        for build_row in build_rows:
+            build_dict = {}
+            # Process the specific row
+            for row in build_row:
+                for row_elem in row:
+                    if isinstance(row_elem, bs4.element.Tag):
+                        # Check if it is a link
+                        if row_elem.name == 'a':
+                            # Check if the link is the download link (has a tool tip)
+                            if "class" in row_elem.attrs and row_elem.attrs["class"][0] == 'tooltipd':
+                                download_link = urlparse.urljoin(bukkit_base_url, row_elem.attrs["href"])
+                                build_dict['download_link'] = download_link
+                            else:
+                                # Link back to the download page, ignore.
+                                if "/downloads/craftbukkit/list/" in row_elem.attrs["href"]:
+                                    continue
+                                else:
+                                    # Grab the text from the link. This is the build number
+                                    build_dict['build_number'] = row_elem.string
+                    # Plain string, not a link. Find the build_name
+                    elif isinstance(row_elem, bs4.element.NavigableString):
+                        # Ignore empty strings
+                        if row_elem.string == ' ' or row_elem == '\n' or row_elem is None:
+                            continue
+                        else:
+                            # Left over is build_name
+                            build_dict['build_name'] = row_elem.string
+            # If no download link found, set to None. Cleaner than always check 'in'
+            if "download_link" not in build_dict:
+                build_dict["download_link"] = None
+            build_list.append(build_dict)
+        # Sort based on build numbers. Newest builds will be last.
+        return sorted(build_list, key=itemgetter('build_number'))
+
     def getLatestVanillaServer(self, stable=False):
         """ Returns the URL of the latest server version.
         table: Determines whether only stable releases are returned or not.
         """
         version_list = self.getVanillaVersionList(stable)
         return self.getVanillaServerUrl(version_list[-1])
+
+    def getLatestBukkitServer(self, stable=False):
+        version_list = self.getBukkitVersionList(stable)
+        return version_list[-1]["download_link"]
 
     def getLatestClient(self, stable=False):
         """ Returns the URL of the latest client version.
@@ -87,6 +152,12 @@ class MinecraftAssetsGetter:
         if versions_old + 1 > len(version_list):
             return None
         return self.getVanillaServerUrl(version_list[-1 - versions_old])
+
+    def getBukkitServer(self, stable=False, versions_old=0):
+        version_list = self.getBukkitVersionList(stable)
+        if versions_old + 1 > len(version_list):
+            return None
+        return version_list[-1 - versions_old]["download_link"]
 
     def getClient(self, stable=False, versions_old=0):
         """ Returns the URL of the latest client version.
@@ -135,9 +206,15 @@ if __name__ == '__main__':
     mag = MinecraftAssetsGetter()
     #for version in mag.getVanillaVersionList():
         #print version
-    print "Latest Prerelease Server: ", mag.getLatestVanillaServer()
-    print "Latest Prerelease Client: ", mag.getLatestClient()
-    print "Latest Stable Server: ", mag.getLatestVanillaServer(stable=True)
-    print "Latest Stable Client: ", mag.getLatestClient(stable=True)
-    print "Previous Prerelease Server: ", mag.getVanillaServer(versions_old=1)
-    print "Previous Stable Server: ", mag.getVanillaServer(stable=True, versions_old=1)
+    print "Latest Prerelease Client: ", mag.getLatestClient(stable=False)
+    print "Latest Stable Client: ", mag.getLatestClient()
+    print "Latest Prerelease Server: ", mag.getLatestVanillaServer(stable=False)
+    print "Latest Stable Server: ", mag.getLatestVanillaServer()
+    print "Previous Prerelease Server: ", mag.getVanillaServer(stable=False, versions_old=1)
+    print "Previous Stable Server: ", mag.getVanillaServer(versions_old=1)
+    print "Latest Bukkit Recommended Server: ", mag.getLatestBukkitServer()
+    print "Latest Bukkit Beta Server: ", mag.getLatestBukkitServer(stable=False)
+    print "Previous Bukkit Recommended Server: ", mag.getBukkitServer(versions_old=1)
+    print "Previous Bukkit Beta Server: ", mag.getBukkitServer(stable=False, versions_old=1)
+    #print mag.getBukkitVersionList(beta=True)
+    #print mag.getBukkitVersionList(beta=False)
