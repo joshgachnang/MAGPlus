@@ -7,9 +7,10 @@ version of vanilla Minecraft, either the latest stable or prerelease version. It
 https://bitbucket.org/Knoppo/mag
 
 Usage often looks like this::
+
     from magplus.magplus import MinecraftAssetsGetter
 
-    mag = MinecraftAssetsGetter(
+    mag = MinecraftAssetsGetter()
     print "Latest Prerelease Server: ", mag.getLatestServer()
     print "Latest Prerelease Client: ", mag.getLatestClient()
     print "Latest Stable Server: ", mag.getLatestServer(stable=True)
