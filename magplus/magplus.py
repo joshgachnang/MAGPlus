@@ -46,28 +46,37 @@ class MinecraftAssetsGetter:
                     print "skip	-> " + version
             if file == "minecraft.jar" or file == "minecraft_server.jar":
                 #version_list.append(version)
-                if stable:
-                    # Regex: 2 digits, 'w', 2 digits, 1 letter
-                    if "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
-                        continue
-                self.date_list[date] = version
+                # Regex: 2 digits, 'w', 2 digits, 1 letter
+                if stable and "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
+                    self.date_list[date] = version
+                elif not stable and "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
+                    self.date_list[date] = version
                 if DEBUG:
                     print "add	-> " + version
             else:
                 if DEBUG:
                     print "skip 	-> " + version
         #self.sorted_list = self.date_list.sort()
-        if DEBUG:
-            print self.date_list
+        #if DEBUG:
+        #print self.date_list
         sorted_list = list()
         for key in sorted(self.date_list.iterkeys()):
             #print "%s: %s" % (key, self.date_list[key])
             sorted_list.append(self.date_list[key])
         #print "SET: ", set(sorted_list)
-        # Filter duplicates
-        return list(set(sorted_list))
 
-    def getBukkitVersionList(self, beta=False):
+        #for item in sorted_list:
+            #print item
+
+        # Filter duplicates
+        seen = set()
+        seen_add = seen.add
+        sorted_unique_list = [ x for x in sorted_list if x not in seen and not seen_add(x)]
+        #for item in sorted_unique_list:
+            #print item
+        return sorted_unique_list
+
+    def getBukkitVersionList(self, stable=True):
         """ Returns a list of versions, sorted by date, from earliest to
         latest. versions[-1] would be the latest version.
         stable: Determines whether only stable (recommended) releases are returned or not.
@@ -81,14 +90,14 @@ class MinecraftAssetsGetter:
         # TODO: Make this less fragile!!!
         bukkit_base_url = 'http://dl.bukkit.org/'
         build_list = []
-        if beta:
-            html = urllib2.urlopen('http://dl.bukkit.org/downloads/craftbukkit/list/beta/').read()
-            soup = bs4.BeautifulSoup(html)
-            build_rows = soup.find_all('tr', {"class": "chan-beta"})
-        else:
+        if stable:
             html = urllib2.urlopen('http://dl.bukkit.org/downloads/craftbukkit/list/rb/').read()
             soup = bs4.BeautifulSoup(html)
             build_rows = soup.find_all('tr', {"class": "chan-rb"})
+        else:
+            html = urllib2.urlopen('http://dl.bukkit.org/downloads/craftbukkit/list/beta/').read()
+            soup = bs4.BeautifulSoup(html)
+            build_rows = soup.find_all('tr', {"class": "chan-beta"})
 
         # Process each row in the table
         for build_row in build_rows:
@@ -125,25 +134,26 @@ class MinecraftAssetsGetter:
         # Sort based on build numbers. Newest builds will be last.
         return sorted(build_list, key=itemgetter('build_number'))
 
-    def getLatestVanillaServer(self, stable=False):
+    def getLatestVanillaServer(self, stable=True):
         """ Returns the URL of the latest server version.
         table: Determines whether only stable releases are returned or not.
         """
         version_list = self.getVanillaVersionList(stable)
         return self.getVanillaServerUrl(version_list[-1])
 
-    def getLatestBukkitServer(self, stable=False):
+    def getLatestBukkitServer(self, stable=True):
         version_list = self.getBukkitVersionList(stable)
         return version_list[-1]["download_link"]
 
-    def getLatestClient(self, stable=False):
+    def getLatestClient(self, stable=True):
         """ Returns the URL of the latest client version.
         table: Determines whether only stable releases are returned or not.
         """
         version_list = self.getVanillaVersionList(stable)
+        #print version_list
         return self.getClientUrl(version_list[-1])
 
-    def getVanillaServer(self, stable=False, versions_old=0):
+    def getVanillaServer(self, stable=True, versions_old=0):
         """ Returns the URL of the latest server version.
         table: Determines whether only stable releases are returned or not.
         Returns None if too versions old is more than available servers.
@@ -154,13 +164,13 @@ class MinecraftAssetsGetter:
             return None
         return self.getVanillaServerUrl(version_list[-1 - versions_old])
 
-    def getBukkitServer(self, stable=False, versions_old=0):
+    def getBukkitServer(self, stable=True, versions_old=0):
         version_list = self.getBukkitVersionList(stable)
         if versions_old + 1 > len(version_list):
             return None
         return version_list[-1 - versions_old]["download_link"]
 
-    def getClient(self, stable=False, versions_old=0):
+    def getClient(self, stable=True, versions_old=0):
         """ Returns the URL of the latest client version.
         table: Determines whether only stable releases are returned or not.
         Returns None if too versions old is more than available servers.
