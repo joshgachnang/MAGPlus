@@ -4,7 +4,7 @@ MinecraftAssetsGetterPlus
 
 MinecraftAssetsGetterPlus is a script that parses the XML of http://assets.minecraft.org to find the most recent
 version of vanilla Minecraft, either the latest stable or prerelease version. It is a fork of
-https://bitbucket.org/Knoppo/mag
+https://bitbucket.org/Knoppo/mag.
 
 Usage often looks like this::
 
