@@ -14,6 +14,7 @@ import urlparse
 
 import bs4
 
+
 class MinecraftAssetsGetter:
     # last backslash in fileUrl is important
     def __init__(self, xmlUrl='http://assets.minecraft.net/', fileUrl='http://assets.minecraft.net/'):
