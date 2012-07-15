@@ -1,6 +1,6 @@
 import unittest
 import urllib2
-from magplus.magplus import MinecraftAssetsGetter
+from magplus import MinecraftAssetsGetter
 
 
 class TestMAG(unittest.TestCase):

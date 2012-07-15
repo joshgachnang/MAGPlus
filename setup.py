@@ -2,10 +2,10 @@ from distutils.core import setup
 
 setup(
     name='MAGPlus',
-    version='0.1.1',
+    version='0.1.2',
     author='Josh Gachnang',
     author_email='Josh@ServerCobra.com',
-    packages=['magplus',],
+    packages=['magplus','magplus.tests'],
     url='http://pypi.python.org/pypi/MAGPlus/',
     license='GPLv2',
     description='Retrieving latest Minecraft versions.',
