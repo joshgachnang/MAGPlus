@@ -6,3 +6,4 @@ setup.py
 magplus/__init__.py
 magplus/demo.py
 magplus/magplus.py
+magplus/tests/test_magplus.py
