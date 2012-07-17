@@ -32,8 +32,11 @@ class MinecraftAssetsGetter:
         contents = self.dom.getElementsByTagName("Contents")
         dt = datetime.now()
         #version_list = list()
-        self.date_list = {}
+        unsorted_list = []
         for content in contents:
+            # Example build_dict
+            # {'version': '12w23' or '1_2_5', 'date': '2011-11-24T13:20:06.000Z'}
+            build_dict = {}
             key = getText(content.getElementsByTagName("Key")[0].childNodes)
             date = getText(content.getElementsByTagName("LastModified")[0].childNodes)
             try:
@@ -42,36 +45,42 @@ class MinecraftAssetsGetter:
                     #print key, ", ", key.split('/'), ', ', version
                     continue
             except ValueError:
-                if DEBUG:
-                    print "skip	-> " + version
+                continue
+            # Ensure this is a JAR
             if file == "minecraft.jar" or file == "minecraft_server.jar":
-                #version_list.append(version)
+                # Filter for stable or unstable version
                 # Regex: 2 digits, 'w', 2 digits, 1 letter
-                if stable and "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
-                    self.date_list[date] = version
-                elif not stable and "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
-                    self.date_list[date] = version
-                if DEBUG:
-                    print "add	-> " + version
-            else:
-                if DEBUG:
-                    print "skip 	-> " + version
-        #self.sorted_list = self.date_list.sort()
-        #if DEBUG:
-        #print self.date_list
-        sorted_list = list()
-        for key in sorted(self.date_list.iterkeys()):
-            #print "%s: %s" % (key, self.date_list[key])
-            sorted_list.append(self.date_list[key])
-        #print "SET: ", set(sorted_list)
+                if stable and "pre" not in version and "rc" not in version and not re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
+                    if DEBUG:
+                        print "Adding stable version %s, date %s" % (version, date)
+                    build_dict['version'] = version
+                    build_dict['date'] = date
+                    unsorted_list.append(build_dict)
+                elif not stable:
+                    if "pre" in version or "rc" in version or re.search("^\d{2}w\d{2}[a-zA-Z]{1}$", version):
+                        if DEBUG:
+                            print "Adding unstable version %s, date %s" % (version, date)
+                        build_dict['version'] = version
+                        build_dict['date'] = date
+                        unsorted_list.append(build_dict)
+                else:
+                    #print "Unknown type found. Version %s, date %s" % (version, date)
+                    # Caught a stable release with unstable=True or vice versa.
+                    continue
 
-        #for item in sorted_list:
-            #print item
+        sorted_list = list()
+        sorted_list = sorted(unsorted_list, key=itemgetter('date'))
+        #for a in sorted_list:
+            #print a
+        sorted_unique_list = list()
+        for b in self.unique_keys(sorted_list):
+            #print b
+            sorted_unique_list.append(b)
 
         # Filter duplicates
-        seen = set()
-        seen_add = seen.add
-        sorted_unique_list = [ x for x in sorted_list if x not in seen and not seen_add(x)]
+        #seen = set()
+        #seen_add = seen.add
+        #sorted_unique_list = [ x for x in sorted_list if x not in seen and not seen_add(x)]
         #for item in sorted_unique_list:
             #print item
         return sorted_unique_list
@@ -139,11 +148,63 @@ class MinecraftAssetsGetter:
         table: Determines whether only stable releases are returned or not.
         """
         version_list = self.getVanillaVersionList(stable)
-        return self.getVanillaServerUrl(version_list[-1])
+        return self.getVanillaServerUrl(version_list[-1]['version'])
 
     def getLatestBukkitServer(self, stable=True):
         version_list = self.getBukkitVersionList(stable)
         return version_list[-1]["download_link"]
+
+    def getNewerVanillaVersion(self, current_version, stable=True):
+        """ Given stable and the current version, attempts to find a newer
+        version. Current version must a key in getVanillaVersionList, so
+        something like 1_2_5, 12w23, rc2, etc.
+        Returns a build_dict {'version', 'date'} or None if current_version
+        is up to date.
+        Raises SyntaxError if current_version is improperly formatted
+        """
+        version_list = self.getVanillaVersionList(stable)
+        # Find the date of current_version by iterating the list
+        current_date = None
+        for version in version_list:
+            if version['version'] == current_version:
+                current_date = version['date']
+        # Could not find in list.
+        if DEBUG:
+            print version_list
+        if current_date is None:
+            raise SyntaxError("current_version was not found in version list.\
+            Either you have an improperly formatted version or a really old version (pre 1.8)")
+        latest_version = version_list[-1]
+        if latest_version['date'] > current_date:
+            return latest_version
+        else:
+            return None
+
+    def getNewerBukkitVersion(self, current_version, stable=True):
+        """ Given stable and the current version, attempts to find a newer
+        version. Current version must a key in getVanillaVersionList, so
+        something like 1_2_5, 12w23, rc2, etc.
+        Returns a build_dict {'version', 'date'} or None if current_version
+        is up to date.
+        Raises SyntaxError if current_version is improperly formatted
+        """
+        version_list = self.getBukkitVersionList(stable)
+        # Find the date of current_version by iterating the list
+        current_build_number = None
+        for version in version_list:
+            if DEBUG:
+                print version['build_name'], current_version
+            if version['build_name'] == current_version:
+                current_build_number = version['build_number']
+        # Could not find in list.
+        if current_build_number is None:
+            raise SyntaxError("current_version was not found in version list.\
+            Either you have an improperly formatted version or a really old version (pre 1.8)")
+        latest_version = version_list[-1]
+        if latest_version['build_number'] > current_build_number:
+            return latest_version
+        else:
+            return None
 
     def getLatestClient(self, stable=True):
         """ Returns the URL of the latest client version.
@@ -151,7 +212,7 @@ class MinecraftAssetsGetter:
         """
         version_list = self.getVanillaVersionList(stable)
         #print version_list
-        return self.getClientUrl(version_list[-1])
+        return self.getClientUrl(version_list[-1]['version'])
 
     def getVanillaServer(self, stable=True, versions_old=0):
         """ Returns the URL of the latest server version.
@@ -162,7 +223,7 @@ class MinecraftAssetsGetter:
         #print len(version_list), ', ', version_list
         if versions_old + 1 > len(version_list):
             return None
-        return self.getVanillaServerUrl(version_list[-1 - versions_old])
+        return self.getVanillaServerUrl(version_list[-1 - versions_old]['version'])
 
     def getBukkitServer(self, stable=True, versions_old=0):
         version_list = self.getBukkitVersionList(stable)
@@ -178,7 +239,7 @@ class MinecraftAssetsGetter:
         version_list = self.getVanillaVersionList(stable)
         if versions_old + 1 > len(version_list):
             return None
-        return self.getClientUrl(version_list[-1 - versions_old])
+        return self.getClientUrl(version_list[-1 - versions_old]['version'])
 
     def getVanillaServerUrl(self, version):
         """ Returns the URL of a given server version. """
@@ -195,6 +256,17 @@ class MinecraftAssetsGetter:
         allVersions = self.getVanillaVersionList()
         weekly = self.getWeeklyList()
         return [x for x in allVersions if x not in weekly]
+
+    def unique_keys(self, items):
+        seen = set()
+        for item in items:
+            key = item['version']
+            if key not in seen:
+                seen.add(key)
+                yield item
+            else:
+                # its a duplicate key, drop.
+                pass
 
 
 def getText(nodelist):
@@ -227,5 +299,12 @@ if __name__ == '__main__':
     print "Latest Bukkit Beta Server: ", mag.getLatestBukkitServer(stable=False)
     print "Previous Bukkit Recommended Server: ", mag.getBukkitServer(versions_old=1)
     print "Previous Bukkit Beta Server: ", mag.getBukkitServer(stable=False, versions_old=1)
-    #print mag.getBukkitVersionList(beta=True)
-    #print mag.getBukkitVersionList(beta=False)
+    print "Vanilla Version List: ", mag.getVanillaVersionList(stable=False)
+    print "Bukkit Stable Version List: ", mag.getBukkitVersionList(stable=True)
+    print "Bukkit Unstable Version List: ", mag.getBukkitVersionList(stable=False)
+    print "Newer Unstable Vanilla Version? Yes: ", mag.getNewerVanillaVersion('12w22a', False)
+    print "Newer Stable Vanilla Version? Yes: ", mag.getNewerVanillaVersion('1_2', True)
+    print "Newer Stable Vanilla Version? No. ", mag.getNewerVanillaVersion('1_2_5', True)
+    print "Newer Unstable Bukkit Version? Yes: ", mag.getNewerBukkitVersion('1.2.3-R0.1', False)
+    print "Newer Stable Bukkit Version? Yes: ", mag.getNewerBukkitVersion('1.1-R1', True)
+    print "Newer Stable Bukkit Version? No. ", mag.getNewerBukkitVersion('1.2.5-R4.0', True)

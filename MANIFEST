@@ -4,6 +4,6 @@ LICENSE.txt
 README.rst
 setup.py
 magplus/__init__.py
-magplus/demo.py
 magplus/magplus.py
+magplus/tests/__init__.py
 magplus/tests/test_magplus.py
