@@ -39,6 +39,8 @@ Todo
 Changes
 =======
 
+0.2.1, 07/17/2012 -- Accept None for getNewerBukkitVersion() and getNewerVanillaVersion(), returns latest version.
+
 0.2.0, 07/17/2012 -- Standardized the versions API (both vanilla and bukkit return lists of dicts). Added getNewerBukkitVersion() and getNewerVanillaVersion() to assist in updating.
 
 0.1.3, 07/15/2012 -- Making tests a real module. Made minor error corrections because of the test suite.

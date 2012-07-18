@@ -161,7 +161,12 @@ class MinecraftAssetsGetter:
         Returns a build_dict {'version', 'date'} or None if current_version
         is up to date.
         Raises SyntaxError if current_version is improperly formatted
+
+        If current_version is None, returns latest version
         """
+        if current_version is None:
+            return self.getLatestVanillaServer(stable)
+
         version_list = self.getVanillaVersionList(stable)
         # Find the date of current_version by iterating the list
         current_date = None
@@ -187,7 +192,12 @@ class MinecraftAssetsGetter:
         Returns a build_dict {'version', 'date'} or None if current_version
         is up to date.
         Raises SyntaxError if current_version is improperly formatted
+
+        If current_version is None, returns latest version
         """
+        if current_version is None:
+            return self.getLatestBukkitServer(stable)
+
         version_list = self.getBukkitVersionList(stable)
         # Find the date of current_version by iterating the list
         current_build_number = None
