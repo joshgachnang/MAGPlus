@@ -165,7 +165,7 @@ class MinecraftAssetsGetter:
         If current_version is None, returns latest version
         """
         if current_version is None:
-            return self.getLatestVanillaServer(stable)
+            return self.getVanillaVersionList(stable)[-1]
 
         version_list = self.getVanillaVersionList(stable)
         # Find the date of current_version by iterating the list
@@ -196,7 +196,7 @@ class MinecraftAssetsGetter:
         If current_version is None, returns latest version
         """
         if current_version is None:
-            return self.getLatestBukkitServer(stable)
+            return self.getBukkitVersionList(stable)[-1]
 
         version_list = self.getBukkitVersionList(stable)
         # Find the date of current_version by iterating the list
@@ -299,22 +299,24 @@ if __name__ == '__main__':
     mag = MinecraftAssetsGetter()
     #for version in mag.getVanillaVersionList():
         #print version
-    print "Latest Prerelease Client: ", mag.getLatestClient(stable=False)
-    print "Latest Stable Client: ", mag.getLatestClient()
-    print "Latest Prerelease Server: ", mag.getLatestVanillaServer(stable=False)
-    print "Latest Stable Server: ", mag.getLatestVanillaServer()
-    print "Previous Prerelease Server: ", mag.getVanillaServer(stable=False, versions_old=1)
-    print "Previous Stable Server: ", mag.getVanillaServer(versions_old=1)
-    print "Latest Bukkit Recommended Server: ", mag.getLatestBukkitServer()
-    print "Latest Bukkit Beta Server: ", mag.getLatestBukkitServer(stable=False)
-    print "Previous Bukkit Recommended Server: ", mag.getBukkitServer(versions_old=1)
-    print "Previous Bukkit Beta Server: ", mag.getBukkitServer(stable=False, versions_old=1)
-    print "Vanilla Version List: ", mag.getVanillaVersionList(stable=False)
-    print "Bukkit Stable Version List: ", mag.getBukkitVersionList(stable=True)
-    print "Bukkit Unstable Version List: ", mag.getBukkitVersionList(stable=False)
+    #print "Latest Prerelease Client: ", mag.getLatestClient(stable=False)
+    #print "Latest Stable Client: ", mag.getLatestClient()
+    #print "Latest Prerelease Server: ", mag.getLatestVanillaServer(stable=False)
+    #print "Latest Stable Server: ", mag.getLatestVanillaServer()
+    #print "Previous Prerelease Server: ", mag.getVanillaServer(stable=False, versions_old=1)
+    #print "Previous Stable Server: ", mag.getVanillaServer(versions_old=1)
+    #print "Latest Bukkit Recommended Server: ", mag.getLatestBukkitServer()
+    #print "Latest Bukkit Beta Server: ", mag.getLatestBukkitServer(stable=False)
+    #print "Previous Bukkit Recommended Server: ", mag.getBukkitServer(versions_old=1)
+    #print "Previous Bukkit Beta Server: ", mag.getBukkitServer(stable=False, versions_old=1)
+    #print "Vanilla Version List: ", mag.getVanillaVersionList(stable=False)
+    #print "Bukkit Stable Version List: ", mag.getBukkitVersionList(stable=True)
+    #print "Bukkit Unstable Version List: ", mag.getBukkitVersionList(stable=False)
+    print "Newer Stable Vanilla Version (given None)? Yes: ", mag.getNewerVanillaVersion(None, True)
     print "Newer Unstable Vanilla Version? Yes: ", mag.getNewerVanillaVersion('12w22a', False)
     print "Newer Stable Vanilla Version? Yes: ", mag.getNewerVanillaVersion('1_2', True)
     print "Newer Stable Vanilla Version? No. ", mag.getNewerVanillaVersion('1_2_5', True)
+    print "Newer Stable Bukkit Version (given None)? Yes: ", mag.getNewerBukkitVersion(None, True)
     print "Newer Unstable Bukkit Version? Yes: ", mag.getNewerBukkitVersion('1.2.3-R0.1', False)
     print "Newer Stable Bukkit Version? Yes: ", mag.getNewerBukkitVersion('1.1-R1', True)
     print "Newer Stable Bukkit Version? No. ", mag.getNewerBukkitVersion('1.2.5-R4.0', True)
